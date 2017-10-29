@@ -1,6 +1,7 @@
 from unittest import TestCase
 from pprint import pprint
 
+from xml.etree import ElementTree as ET
 from slixmpp.stanza.iq import Iq
 from slixmpp.plugins.xep_0004.stanza.form import Form
 
@@ -24,10 +25,11 @@ class TestXHang(TestCase):
         form = self.xmpp.register_create_form(
             iq,
             username=username, password=password)
-        query_payload = form.xml.find('{jabber:iq:register}query').getchildren()
-        u, p = self.xmpp.register_parse_form_payload(query_payload[0])
-        self.assertEqual(username, u)
-        self.assertEqual(password, p)
+        query_payload = form.xml.find('{jabber:iq:register}query')
+        query_children = query_payload.getchildren()
+        data = self.xmpp.register_parse_form_payload(query_children[0])
+        self.assertEqual(username, data['username'])
+        self.assertEqual(password, data['password'])
 
     def test_start_registration(self):
         iq = Iq()
@@ -38,11 +40,10 @@ class TestXHang(TestCase):
         # send bare register request
         reply = self.xmpp.register(iq)
         payload = reply.get_payload()
-        u, p = self.xmpp.register_parse_form_payload(payload[0])
-        self.assertIsNone(u)
-        self.assertIsNone(p)
+        data = self.xmpp.register_parse_form_payload(payload[0])
+        self.assertEqual(len(data), 0)
 
-    def test_start_unregistration(self):
+    def test_start_unregsitered(self):
         iq = Iq()
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
@@ -51,12 +52,14 @@ class TestXHang(TestCase):
         # send bare register request
         reply = self.xmpp.register(iq)
         payload = reply.get_payload()
-        u, p = self.xmpp.register_parse_form_payload(payload[0])
-        self.assertIsNone(u)
-        self.assertIsNone(p)
+        data = self.xmpp.register_parse_form_payload(payload[0])
+        self.assertEqual(len(data), 0)
 
-    def test_start_registration(self):
-        self.xmpp.registered = { 'user@example.com/asdf': 'pw' }
+    def test_already_registered(self):
+        username = 'username'
+        password = 'password'
+        self.xmpp.registered = { 'user@example.com': {'username':username,
+                                                      'password':password} }
         iq = Iq()
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
@@ -64,8 +67,23 @@ class TestXHang(TestCase):
 
         # send bare register request
         reply = self.xmpp.register(iq)
-        payload = reply.get_payload()
-        u, p = self.xmpp.register_parse_form_payload(payload[0])
-        self.assertIsNone(u)
-        self.assertIsNone(p)
+        payload = reply.get_payload()[0]
+        xml_payload = reply.xml.find('{jabber:iq:register}query')
+        self.assertEqual(payload, xml_payload)
+        data = self.xmpp.register_parse_form_payload(payload[0])
+        self.assertEqual(len(data), 2)
+        self.assertEqual(data['username'], 'username')
+        self.assertEqual(data['password'], 'password')
     
+    def test_unregiser(self):
+        username = 'username'
+        password = 'password'
+        self.xmpp.registered = { 'user@example.com': {'username':username,
+                                                      'password':password} }
+        iq = Iq()
+        iq['from'] = 'user@example.com/asdf'
+        iq['to'] = 'hangups.example.net'
+        iq.set_query('jabber:iq:register')
+        iq.set_payload(ET.Element('remove'))
+        result = self.xmpp.register(iq)
+        self.assertEqual(len(self.xmpp.registered), 0)

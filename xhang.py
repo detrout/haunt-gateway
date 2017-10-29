@@ -36,7 +36,6 @@ class EchoComponent(ComponentXMPP):
             name='Hangouts Gateway')
         self.plugin['xep_0030'].add_feature('jabber:iq:register')
         #pprint(dir(self))
-        print(self.plugin['xep_0077'])
 
     def message(self, msg):
         msg.reply('Poke').send()
@@ -63,29 +62,31 @@ class EchoComponent(ComponentXMPP):
     def register(self, iq):
         if iq is None:
             return
+
+        if iq.get('from') is None:
+            logger.warning("Odd IQ packet. No From")
+            return
         
-        reply = None
-        pprint(iq)
         query = iq.xml.find('{jabber:iq:register}query')
         if query is None:
+            logger.info('No query payload')
             return
+
+        reply = None
         query_payload = query.getchildren()
 
-        username=None
-        password = None
-        if iq['from'].bare in self.registered:
-            username = 'asdf'
-            password = 'asdf'
+        data = self.registered.get(iq['from'].bare, {})
 
-        print('qp', len(query_payload))
+        username = data.get('username')
+        password = data.get('password')
+
         if len(query_payload) == 0:
             reply = self.register_create_form(
                 iq,
                 username=username,
                 password=password)
-            print('reply', type(reply))
         elif len(query_payload) == 1:
-            username, password = self.register_parse_form_payload(query_payload[0])
+            data = self.register_parse_form_payload(query_payload[0])
 
         return reply
     
@@ -104,21 +105,14 @@ class EchoComponent(ComponentXMPP):
         return reply
 
     def register_parse_form_payload(self, x):
-        print('x.tag', x.tag)
-        username = None
-        password = None
+        results= {}
         if x.tag == '{jabber:x:data}x':
             for field in x.getchildren():
                 for value in field.getchildren():
-                    print(field.attrib['var'], value.text)
-                    if field.attrib['var'] == 'username':
-                        username = value.text
-                    elif field.attrib['var'] == 'password':
-                        password = value.text
-        return (username, password)
+                    results[field.attrib['var']] = value.text
+        return results
 
     def unregister(self, iq):
-        pprint(iq['register'])
         msg = 'Goodbye %s' % (iq['register']['username'])
         self.send_message(iq['from'], msg, mfrom=self.boundjid.full)
         
