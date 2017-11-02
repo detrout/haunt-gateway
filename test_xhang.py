@@ -5,7 +5,7 @@ from pprint import pprint
 from xml.etree import ElementTree as ET
 from slixmpp.stanza.iq import Iq
 
-from xhang import EchoComponent
+from xhang import EchoComponent, get_query_contents
 
 
 def async_test(coro):
@@ -93,3 +93,18 @@ class TestXHang(TestCase):
         iq.set_payload(ET.Element('remove'))
         result = self.xmpp.register(iq)
         self.assertEqual(len(self.xmpp.registered), 0)
+class TestUtils(TestCase):
+    def test_get_query_contents(self):
+        iq = Iq(stype='get')
+        self.assertEqual(get_query_contents(iq), [])
+
+        iq = Iq(stype='set')
+        iq.set_query('http://jabber.org/protocol/disco#info')
+        self.assertEqual(get_query_contents(iq), [])
+
+        iq = Iq(stype='set')
+        iq.set_payload(ET.fromstring('<query ns="jabber:x:register"><remove/></query>'))
+        remove = ET.Element('remove')
+        contents = get_query_contents(iq)
+        self.assertEqual(len(contents), 1)
+        self.assertEqual(contents[0].tag, 'remove')

@@ -114,6 +114,19 @@ class EchoComponent(ComponentXMPP):
         self.send_message(iq['from'], msg, mfrom=self.boundjid.full)
 
 
+def get_query_contents(iq):
+    """Return the contents of the iq query tag
+    """
+    query = iq.get_payload()
+    for element in query:
+        # print('gqce', element, element.tag, type(element))
+        if element.tag.endswith('query'):
+            children = element.getchildren()
+            return children
+
+    return []
+
+
 def main():
     from configparser import ConfigParser
     config = ConfigParser()
