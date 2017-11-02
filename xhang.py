@@ -10,7 +10,6 @@ logger = logging.getLogger('xmpp')
 
 class EchoComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port):
-        logger.debug('init')
         super(EchoComponent, self).__init__(jid, secret, server, port)
 
         self.registered = {}
@@ -34,16 +33,12 @@ class EchoComponent(ComponentXMPP):
             itype='hangouts',
             name='Hangouts Gateway')
         self.plugin['xep_0030'].add_feature('jabber:iq:register')
-        #pprint(dir(self))
 
     def message(self, msg):
         msg.reply('Poke').send()
 
     def start(self, event):
         logger.debug('starting')
-        #self.send_message(mto='diane@ghic.org',
-        #                  mbody='test message',
-        #                  mfrom='server@hangups.ghic.org')
         logger.debug(self.roster)
 
     def probe(self, event):
