@@ -2,8 +2,7 @@ from pprint import pprint
 import asyncio
 import logging
 from slixmpp.componentxmpp import ComponentXMPP
-from slixmpp.plugins.base import BasePlugin
-from slixmpp.xmlstream import register_stanza_plugin, ElementBase, JID, ET
+from slixmpp.xmlstream import ET
 from slixmpp.xmlstream.handler.callback import Callback
 from slixmpp.xmlstream.matcher.xpath import MatchXPath
 

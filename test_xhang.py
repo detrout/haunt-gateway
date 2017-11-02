@@ -4,7 +4,6 @@ from pprint import pprint
 
 from xml.etree import ElementTree as ET
 from slixmpp.stanza.iq import Iq
-from slixmpp.plugins.xep_0004.stanza.form import Form
 
 from xhang import EchoComponent
 
