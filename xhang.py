@@ -107,7 +107,7 @@ class EchoComponent(ComponentXMPP):
         return reply
 
     def register_parse_form_payload(self, x):
-        results= {}
+        results = {}
         if x.tag == '{jabber:x:data}x':
             for field in x.getchildren():
                 for value in field.getchildren():

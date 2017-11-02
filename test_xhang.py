@@ -64,8 +64,8 @@ class TestXHang(TestCase):
     def test_already_registered(self):
         username = 'username'
         password = 'password'
-        self.xmpp.registered = { 'user@example.com': {'username':username,
-                                                      'password':password} }
+        self.xmpp.registered = {'user@example.com': {'username': username,
+                                                     'password': password}}
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
@@ -84,8 +84,8 @@ class TestXHang(TestCase):
     def test_unregiser(self):
         username = 'username'
         password = 'password'
-        self.xmpp.registered = { 'user@example.com': {'username':username,
-                                                      'password':password} }
+        self.xmpp.registered = {'user@example.com': {'username': username,
+                                                     'password': password}}
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
