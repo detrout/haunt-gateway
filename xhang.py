@@ -1,12 +1,16 @@
 from pprint import pprint
 import asyncio
+import json
 import logging
+import os
+
 from slixmpp.componentxmpp import ComponentXMPP
 from slixmpp.xmlstream import ET
 from slixmpp.xmlstream.handler.callback import Callback
 from slixmpp.xmlstream.matcher.xpath import MatchXPath
 
 logger = logging.getLogger('xmpp')
+
 
 class EchoComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port):
@@ -153,7 +157,13 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
 
     xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port)
-    
+
+    # Dirty Hack to load account info
+    account_file = 'accounts.json'
+    if os.path.exists(account_file):
+        with open(account_file) as instream:
+            xmpp.registered = json.load(instream)
+
     xmpp.connect()
     xmpp.process()
 
