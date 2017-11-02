@@ -68,6 +68,9 @@ class EchoComponent(ComponentXMPP):
         query = iq.xml.find('{jabber:iq:register}query')
         if query is None:
             logger.info('No query payload')
+
+        if iq.get('type') != 'set':
+            logger.warning('Odd IQ type %s' % (iq.get('type'),))
             return
 
         reply = None
@@ -98,6 +101,8 @@ class EchoComponent(ComponentXMPP):
         query = ET.Element('{jabber:iq:register}query')
         query.insert(0, f.xml)
         reply = iq.reply()
+        reply['from'] = self.jid
+        reply['type'] = 'set'
         reply.set_payload(query)
         return reply
 

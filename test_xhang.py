@@ -23,7 +23,7 @@ class TestXHang(TestCase):
         self.xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port)
         
     def test_send_form(self):
-        iq = Iq()
+        iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         username = 'user'
@@ -38,7 +38,7 @@ class TestXHang(TestCase):
         self.assertEqual(password, data['password'])
 
     def test_start_registration(self):
-        iq = Iq()
+        iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
@@ -50,7 +50,7 @@ class TestXHang(TestCase):
         self.assertEqual(len(data), 0)
 
     def test_start_unregsitered(self):
-        iq = Iq()
+        iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
@@ -66,7 +66,7 @@ class TestXHang(TestCase):
         password = 'password'
         self.xmpp.registered = { 'user@example.com': {'username':username,
                                                       'password':password} }
-        iq = Iq()
+        iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
@@ -86,7 +86,7 @@ class TestXHang(TestCase):
         password = 'password'
         self.xmpp.registered = { 'user@example.com': {'username':username,
                                                       'password':password} }
-        iq = Iq()
+        iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
