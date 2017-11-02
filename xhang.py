@@ -76,11 +76,28 @@ class EchoComponent(ComponentXMPP):
                 iq,
                 username=username,
                 password=password)
-        elif len(query_payload) == 1:
-            data = self.register_parse_form_payload(query_payload[0])
 
-        return reply
-    
+        # returning filled out form
+        if query_payload[0].tag == '{jabber:x:data}x':
+            data = await self.register_parse_form_payload(query_payload[0])
+            # TODO Register
+            self.registered[iq['from'].bare] = data
+            return iq.reply()
+
+        # removing already registered
+        elif query_payload[0].tag == 'remove':
+            try:
+                del self.registered[iq.get('from').bare]
+            except KeyError as e:
+                reply = iq.reply()
+                reply.error()
+                reply.set_payload(ET.fromstring('<error type="cancel"><item-not-found/></error>'))
+                return reply
+
+            return iq.reply()
+        else:
+            print('else', query_payload[0].tag)
+
     async def register_create_form(self, iq, username=None, password=None):
         f = self.plugin['xep_0004'].make_form(
             title='register',

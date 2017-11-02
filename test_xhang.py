@@ -84,6 +84,23 @@ class TestXHang(TestCase):
         self.assertEqual(len(data), 2)
         self.assertEqual(data['username'], 'username')
         self.assertEqual(data['password'], 'password')
+
+    @async_test
+    async def test_finish_registration(self):
+        self.assertEqual(len(self.xmpp.registered), 0)
+        username = 'finish'
+        password = 'registration'
+
+        iq = Iq(stype='set')
+        iq['from'] = 'user@example.com/asdf'
+        iq['to'] = 'hangups.example.net'
+        iq.set_query('jabber:iq:register')
+        form = await self.xmpp.register_create_form(iq, username, password)
+        reply = await self.xmpp.register(form)
+
+        self.assertEqual(reply['type'], 'result')
+        self.assertEqual(len(self.xmpp.registered), 1)
+
     @async_test
     async def test_unregister(self):
         username = 'username'
@@ -97,6 +114,22 @@ class TestXHang(TestCase):
         result = await self.xmpp.register(iq)
         self.assertEqual(result['type'], 'result')
         self.assertEqual(len(self.xmpp.registered), 0)
+
+    @async_test
+    async def test_unregister_wrong_user(self):
+        username = 'username'
+        password = 'password'
+        self.xmpp.registered = {'gooduser@example.com': {'username': username,
+                                                         'password': password}}
+        iq = Iq(stype='set')
+        iq['from'] = 'baduser@example.com/asdf'
+        iq['to'] = 'hangups.example.net'
+        iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+        result = await self.xmpp.register(iq)
+        self.assertEqual(result['type'], 'error')
+        self.assertEqual(len(self.xmpp.registered), 1)
+
+
 class TestUtils(TestCase):
     def test_get_query_contents(self):
         iq = Iq(stype='get')
