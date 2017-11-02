@@ -13,23 +13,23 @@ class EchoComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port):
         logger.debug('init')
         super(EchoComponent, self).__init__(jid, secret, server, port)
-            
-        self.registered = { }
+
+        self.registered = {}
 
         self.add_event_handler('message', self.message)
         self.add_event_handler('session_start', self.start)
         self.add_event_handler('presence_probe', self.probe)
         self.add_event_handler('presence_available', self.presence_available)
 
-        self.register_plugin('xep_0004') # Data Forms
-        self.register_plugin('xep_0077') # In-Band Registration
+        self.register_plugin('xep_0004')  # Data Forms
+        self.register_plugin('xep_0077')  # In-Band Registration
         self.register_handler(
             Callback('In-Band Registration',
                      MatchXPath('{%s}iq/{jabber:iq:register}query' % (self.default_ns,)),
                      self.register_cb))
-        self.register_plugin('xep_0199') # Ping
-        self.register_plugin('xep_0092') # Software Version
-        self.register_plugin('xep_0030') # Service Discovery
+        self.register_plugin('xep_0199')  # Ping
+        self.register_plugin('xep_0092')  # Software Version
+        self.register_plugin('xep_0030')  # Service Discovery
         self.plugin['xep_0030'].add_identity(
             category='gateway',
             itype='hangouts',
@@ -51,8 +51,7 @@ class EchoComponent(ComponentXMPP):
         logger.debug('probe %s', event)
 
     def presence_available(self, *args, **kwargs):
-        logger.debug('pa %s',str(args))
-
+        logger.debug('pa %s', str(args))
 
     def register_cb(self, iq):
         reply = self.register(iq)
@@ -76,7 +75,6 @@ class EchoComponent(ComponentXMPP):
         query_payload = query.getchildren()
 
         data = self.registered.get(iq['from'].bare, {})
-
         username = data.get('username')
         password = data.get('password')
 
@@ -115,22 +113,25 @@ class EchoComponent(ComponentXMPP):
     def unregister(self, iq):
         msg = 'Goodbye %s' % (iq['register']['username'])
         self.send_message(iq['from'], msg, mfrom=self.boundjid.full)
-        
+
+
 def main():
     from configparser import ConfigParser
     config = ConfigParser()
     config.read('xhang.ini')
+
     service_name = config['DEFAULT'].get('service_name')
     secret = config['DEFAULT'].get('secret')
     jabber_server = config['DEFAULT'].get('jabber_server', '127.0.0.1')
     jabber_port = config['DEFAULT'].get('jabber_port', 5347)
-    
+
     logging.basicConfig(level=logging.DEBUG)
 
     xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port)
     
     xmpp.connect()
     xmpp.process()
+
 
 if __name__ == '__main__':
     main()
