@@ -45,8 +45,10 @@ class TestXHang(TestCase):
 
         # send bare register request
         reply = self.xmpp.register(iq)
-        payload = reply.get_payload()
         data = self.xmpp.register_parse_form_payload(payload[0])
+        payload = get_query_contents(reply)
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0].tag, '{jabber:x:data}x')
         self.assertEqual(len(data), 0)
 
     def test_start_unregsitered(self):
@@ -73,10 +75,8 @@ class TestXHang(TestCase):
 
         # send bare register request
         reply = self.xmpp.register(iq)
-        payload = reply.get_payload()[0]
-        xml_payload = reply.xml.find('{jabber:iq:register}query')
-        self.assertEqual(payload, xml_payload)
         data = self.xmpp.register_parse_form_payload(payload[0])
+        payload = get_query_contents(reply)
         self.assertEqual(len(data), 2)
         self.assertEqual(data['username'], 'username')
         self.assertEqual(data['password'], 'password')

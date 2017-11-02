@@ -64,17 +64,12 @@ class EchoComponent(ComponentXMPP):
         if iq.get('from') is None:
             logger.warning("Odd IQ packet. No From")
             return
-        
-        query = iq.xml.find('{jabber:iq:register}query')
-        if query is None:
-            logger.info('No query payload')
 
         if iq.get('type') != 'set':
             logger.warning('Odd IQ type %s' % (iq.get('type'),))
             return
 
-        reply = None
-        query_payload = query.getchildren()
+        query_payload = get_query_contents(iq)
 
         data = self.registered.get(iq['from'].bare, {})
         username = data.get('username')
