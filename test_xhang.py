@@ -21,49 +21,53 @@ class TestXHang(TestCase):
         self.jabber_server = '127.0.0.1'
         self.port = 1234
         self.xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port)
-        
-    def test_send_form(self):
+
+    @async_test
+    async def test_send_form(self):
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         username = 'user'
         password = 'pass'
-        form = self.xmpp.register_create_form(
+        form = await self.xmpp.register_create_form(
             iq,
             username=username, password=password)
         query_payload = form.xml.find('{jabber:iq:register}query')
         query_children = query_payload.getchildren()
-        data = self.xmpp.register_parse_form_payload(query_children[0])
+        data = await self.xmpp.register_parse_form_payload(query_children[0])
         self.assertEqual(username, data['username'])
         self.assertEqual(password, data['password'])
 
-    def test_start_registration(self):
+    @async_test
+    async def test_start_registration(self):
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
 
         # send bare register request
-        reply = self.xmpp.register(iq)
-        data = self.xmpp.register_parse_form_payload(payload[0])
+        reply = await self.xmpp.register(iq)
         payload = get_query_contents(reply)
         self.assertEqual(len(payload), 1)
         self.assertEqual(payload[0].tag, '{jabber:x:data}x')
+        data = await self.xmpp.register_parse_form_payload(payload[0])
         self.assertEqual(len(data), 0)
 
-    def test_start_unregsitered(self):
+    @async_test
+    async def test_start_unregistered(self):
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
 
         # send bare register request
-        reply = self.xmpp.register(iq)
+        reply = await self.xmpp.register(iq)
         payload = reply.get_payload()
-        data = self.xmpp.register_parse_form_payload(payload[0])
+        data = await self.xmpp.register_parse_form_payload(payload[0])
         self.assertEqual(len(data), 0)
 
-    def test_already_registered(self):
+    @async_test
+    async def test_already_registered(self):
         username = 'username'
         password = 'password'
         self.xmpp.registered = {'user@example.com': {'username': username,
@@ -74,14 +78,14 @@ class TestXHang(TestCase):
         iq.set_query('jabber:iq:register')
 
         # send bare register request
-        reply = self.xmpp.register(iq)
-        data = self.xmpp.register_parse_form_payload(payload[0])
+        reply = await self.xmpp.register(iq)
         payload = get_query_contents(reply)
+        data = await self.xmpp.register_parse_form_payload(payload[0])
         self.assertEqual(len(data), 2)
         self.assertEqual(data['username'], 'username')
         self.assertEqual(data['password'], 'password')
-    
-    def test_unregiser(self):
+    @async_test
+    async def test_unregister(self):
         username = 'username'
         password = 'password'
         self.xmpp.registered = {'user@example.com': {'username': username,

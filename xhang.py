@@ -47,12 +47,12 @@ class EchoComponent(ComponentXMPP):
     def presence_available(self, *args, **kwargs):
         logger.debug('pa %s', str(args))
 
-    def register_cb(self, iq):
-        reply = self.register(iq)
+    async def register_cb(self, iq):
+        reply = await self.register(iq)
         if reply is not None:
             reply.send()
-            
-    def register(self, iq):
+
+    async def register(self, iq):
         if iq is None:
             return
 
@@ -70,8 +70,9 @@ class EchoComponent(ComponentXMPP):
         username = data.get('username')
         password = data.get('password')
 
+        # starting to register
         if len(query_payload) == 0:
-            reply = self.register_create_form(
+            return await self.register_create_form(
                 iq,
                 username=username,
                 password=password)
@@ -80,7 +81,7 @@ class EchoComponent(ComponentXMPP):
 
         return reply
     
-    def register_create_form(self, iq, username=None, password=None):
+    async def register_create_form(self, iq, username=None, password=None):
         f = self.plugin['xep_0004'].make_form(
             title='register',
             instructions='Please provide username & password')
@@ -96,7 +97,7 @@ class EchoComponent(ComponentXMPP):
         reply.set_payload(query)
         return reply
 
-    def register_parse_form_payload(self, x):
+    async def register_parse_form_payload(self, x):
         results = {}
         if x.tag == '{jabber:x:data}x':
             for field in x.getchildren():
