@@ -89,9 +89,9 @@ class TestXHang(TestCase):
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
-        iq.set_query('jabber:iq:register')
-        iq.set_payload(ET.Element('remove'))
-        result = self.xmpp.register(iq)
+        iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+        result = await self.xmpp.register(iq)
+        self.assertEqual(result['type'], 'result')
         self.assertEqual(len(self.xmpp.registered), 0)
 class TestUtils(TestCase):
     def test_get_query_contents(self):
