@@ -52,11 +52,19 @@ class EchoComponent(ComponentXMPP):
         logger.debug('pa %s', str(args))
 
     async def register_cb(self, iq):
+        """Callback for triggering registration
+
+        This is seperate just to make it easier to test the
+        registration logic.
+
+        """
         reply = await self.register(iq)
         if reply is not None:
             reply.send()
 
     async def register(self, iq):
+        """Logic for handling user registration to the component
+        """
         if iq is None:
             return
 
@@ -103,6 +111,11 @@ class EchoComponent(ComponentXMPP):
             print('else', query_payload[0].tag)
 
     async def register_create_form(self, iq, username=None, password=None):
+        """Prepare a registration form
+
+        If username and password are set, use those for the default values.
+        This path is used when the user is already registered.
+        """
         f = self.plugin['xep_0004'].make_form(
             title='register',
             instructions='Please provide username & password')
@@ -133,6 +146,12 @@ class EchoComponent(ComponentXMPP):
 
 def get_query_contents(iq):
     """Return the contents of the iq query tag
+
+    Given an IQ that looks like this:
+    <iq><query><jabber:x:data><field>....</jabber:x:data></query></iq?
+    It'll return the ElementTree elements between the query tag.
+
+    Or the empty list if there was nothing
     """
     query = iq.get_payload()
     for element in query:
