@@ -74,8 +74,6 @@ class Users:
                 conn.close()
 
     async def create_table_if_needed(self):
-        print(self.database)
-        print(await self._does_database_exist())
         await self.connect()
         cur = await self.conn.cursor()
         await cur.execute("create sequence if not exists users_id_seq")
