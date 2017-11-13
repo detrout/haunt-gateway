@@ -9,14 +9,16 @@ from slixmpp.xmlstream import ET
 from slixmpp.xmlstream.handler.callback import Callback
 from slixmpp.xmlstream.matcher.xpath import MatchXPath
 
+from users import Users
 logger = logging.getLogger('xmpp')
 
 
+
 class EchoComponent(ComponentXMPP):
-    def __init__(self, jid, secret, server, port):
+    def __init__(self, jid, secret, server, port, database):
         super(EchoComponent, self).__init__(jid, secret, server, port)
 
-        self.registered = {}
+        self.registered = Users(database)
 
         self.add_event_handler('message', self.message)
         self.add_event_handler('session_start', self.start)
@@ -78,9 +80,13 @@ class EchoComponent(ComponentXMPP):
 
         query_payload = get_query_contents(iq)
 
-        data = self.registered.get(iq['from'].bare, {})
-        username = data.get('username')
-        password = data.get('password')
+        data = await self.registered.find_account(iq['from'].bare)
+        if data is not None:
+            username = data['username']
+            password = data['password']
+        else:
+            username = None
+            password = None
 
         # starting to register
         if len(query_payload) == 0:
@@ -93,14 +99,14 @@ class EchoComponent(ComponentXMPP):
         if query_payload[0].tag == '{jabber:x:data}x':
             data = await self.register_parse_form_payload(query_payload[0])
             # TODO Register
-            self.registered[iq['from'].bare] = data
+            # try logging in?
+            await self.registered.add_account(iq['from'].bare, data['username'], data['password'])
             return iq.reply()
 
         # removing already registered
         elif query_payload[0].tag == 'remove':
-            try:
-                del self.registered[iq.get('from').bare]
-            except KeyError as e:
+            removed = await self.registered.remove_account(iq.get('from').bare)
+            if removed == 0:
                 reply = iq.reply()
                 reply.error()
                 reply.set_payload(ET.fromstring('<error type="cancel"><item-not-found/></error>'))
@@ -172,10 +178,11 @@ def main():
     secret = config['DEFAULT'].get('secret')
     jabber_server = config['DEFAULT'].get('jabber_server', '127.0.0.1')
     jabber_port = config['DEFAULT'].get('jabber_port', 5347)
+    database = config['DEFAULT'].get('database')
 
     logging.basicConfig(level=logging.DEBUG)
 
-    xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port)
+    xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port, database)
 
     # Dirty Hack to load account info
     account_file = 'accounts.json'

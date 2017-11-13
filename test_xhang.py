@@ -20,114 +20,167 @@ class TestXHang(TestCase):
         self.secret = 'secret'
         self.jabber_server = '127.0.0.1'
         self.port = 1234
-        self.xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port)
+        self.database = 'testxhang'
 
     @async_test
     async def test_send_form(self):
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         username = 'user'
         password = 'pass'
-        form = await self.xmpp.register_create_form(
+        form = await xmpp.register_create_form(
             iq,
             username=username, password=password)
         query_payload = form.xml.find('{jabber:iq:register}query')
         query_children = query_payload.getchildren()
-        data = await self.xmpp.register_parse_form_payload(query_children[0])
+        data = await xmpp.register_parse_form_payload(query_children[0])
         self.assertEqual(username, data['username'])
         self.assertEqual(password, data['password'])
 
     @async_test
     async def test_start_registration(self):
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
 
         # send bare register request
-        reply = await self.xmpp.register(iq)
+        reply = await xmpp.register(iq)
         payload = get_query_contents(reply)
         self.assertEqual(len(payload), 1)
         self.assertEqual(payload[0].tag, '{jabber:x:data}x')
-        data = await self.xmpp.register_parse_form_payload(payload[0])
+        data = await xmpp.register_parse_form_payload(payload[0])
         self.assertEqual(len(data), 0)
 
     @async_test
     async def test_start_unregistered(self):
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
         iq['to'] = 'hangups.example.net'
         iq.set_query('jabber:iq:register')
 
         # send bare register request
-        reply = await self.xmpp.register(iq)
+        reply = await xmpp.register(iq)
         payload = reply.get_payload()
-        data = await self.xmpp.register_parse_form_payload(payload[0])
+        data = await xmpp.register_parse_form_payload(payload[0])
         self.assertEqual(len(data), 0)
 
     @async_test
     async def test_already_registered(self):
+        database = self.database + '_already_regisered'
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, database)
+        jid = 'user_registered@example.com'
         username = 'username'
         password = 'password'
-        self.xmpp.registered = {'user@example.com': {'username': username,
-                                                     'password': password}}
-        iq = Iq(stype='set')
-        iq['from'] = 'user@example.com/asdf'
-        iq['to'] = 'hangups.example.net'
-        iq.set_query('jabber:iq:register')
 
-        # send bare register request
-        reply = await self.xmpp.register(iq)
-        payload = get_query_contents(reply)
-        data = await self.xmpp.register_parse_form_payload(payload[0])
-        self.assertEqual(len(data), 2)
-        self.assertEqual(data['username'], 'username')
-        self.assertEqual(data['password'], 'password')
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
+        await xmpp.registered.connect()
+        try:
+            await xmpp.registered.add_account(jid, username, password)
+            iq = Iq(stype='set')
+            iq['from'] = 'user_registered@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_query('jabber:iq:register')
+
+            # send bare register request
+            reply = await xmpp.register(iq)
+            payload = get_query_contents(reply)
+            data = await xmpp.register_parse_form_payload(payload[0])
+            self.assertEqual(len(data), 2)
+            self.assertEqual(data['username'], 'username')
+            self.assertEqual(data['password'], 'password')
+        finally:
+            await xmpp.registered.remove_account(jid)
+            xmpp.registered.close()
+            await xmpp.registered._drop_database()
 
     @async_test
     async def test_finish_registration(self):
-        self.assertEqual(len(self.xmpp.registered), 0)
-        username = 'finish'
-        password = 'registration'
+        database = self.database + '_finish_registration'
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, database)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
+        try:
+            count = await xmpp.registered.count()
+            self.assertEqual(count, 0)
+            username = 'finish'
+            password = 'registration'
 
-        iq = Iq(stype='set')
-        iq['from'] = 'user@example.com/asdf'
-        iq['to'] = 'hangups.example.net'
-        iq.set_query('jabber:iq:register')
-        form = await self.xmpp.register_create_form(iq, username, password)
-        reply = await self.xmpp.register(form)
+            iq = Iq(stype='set')
+            iq['from'] = 'user@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_query('jabber:iq:register')
+            form = await xmpp.register_create_form(iq, username, password)
+            reply = await xmpp.register(form)
 
-        self.assertEqual(reply['type'], 'result')
-        self.assertEqual(len(self.xmpp.registered), 1)
+            self.assertEqual(reply['type'], 'result')
+            count = await xmpp.registered.count()
+            self.assertEqual(count, 1)
+        finally:
+            xmpp.registered.close()
+            await xmpp.registered._drop_database()
 
     @async_test
     async def test_unregister(self):
+        database = self.database + '_unregister'
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, database)
+        jid = 'user_unregister@example.com'
         username = 'username'
         password = 'password'
-        self.xmpp.registered = {'user@example.com': {'username': username,
-                                                     'password': password}}
-        iq = Iq(stype='set')
-        iq['from'] = 'user@example.com/asdf'
-        iq['to'] = 'hangups.example.net'
-        iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
-        result = await self.xmpp.register(iq)
-        self.assertEqual(result['type'], 'result')
-        self.assertEqual(len(self.xmpp.registered), 0)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
+        await xmpp.registered.connect()
+        try:
+            await xmpp.registered.add_account(jid, username, password)
+            iq = Iq(stype='set')
+            iq['from'] = 'user_unregister@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+            result = await xmpp.register(iq)
+            self.assertEqual(result['type'], 'result')
+            count = await xmpp.registered.count()
+            self.assertEqual(count, 0)
+        finally:
+            await xmpp.registered.remove_account(jid)
+            xmpp.registered.close()
+            await xmpp.registered._drop_database()
 
     @async_test
     async def test_unregister_wrong_user(self):
+        database = self.database + '_unregister_wrong_user'
+        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, database)
+        jid = 'gooduser@example.com'
         username = 'username'
         password = 'password'
-        self.xmpp.registered = {'gooduser@example.com': {'username': username,
-                                                         'password': password}}
-        iq = Iq(stype='set')
-        iq['from'] = 'baduser@example.com/asdf'
-        iq['to'] = 'hangups.example.net'
-        iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
-        result = await self.xmpp.register(iq)
-        self.assertEqual(result['type'], 'error')
-        self.assertEqual(len(self.xmpp.registered), 1)
+        await xmpp.registered._create_database_if_needed()
+        await xmpp.registered.create_table_if_needed()
+        await xmpp.registered.connect()
+        try:
+            await xmpp.registered.add_account(jid, username, password)
+
+            iq = Iq(stype='set')
+            iq['from'] = 'baduser@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+            result = await xmpp.register(iq)
+            self.assertEqual(result['type'], 'error')
+            count = await xmpp.registered.count()
+            self.assertEqual(count, 1)
+        finally:
+            await xmpp.registered.remove_account(jid)
+            xmpp.registered.close()
+            await xmpp.registered._drop_database()
 
 
 class TestUtils(TestCase):
