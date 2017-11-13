@@ -12,8 +12,8 @@ class TestUser(TestCase):
         self.database = 'xhangtest'
 
     @async_test
-    async def test_not_exists(self):
-        users = Users(database=self.database)
+    async def test_db_missing(self):
+        users = Users(database="i-probably-don't-exist")
         self.assertFalse(await users._does_database_exist())
 
     @async_test
