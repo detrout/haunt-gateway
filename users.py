@@ -87,3 +87,40 @@ create table if not exists users (
             token varchar(255))
 """)
 
+    async def add_account(self, jid, username, token):
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('insert into users ("jid", "username", "token") values (%s, %s, %s)',
+                          (jid, username, token))
+
+    async def find_account(self, jid):
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('select username, token from users where jid=%s', (jid,))
+        row = await cur.fetchone()
+        assert cur.rowcount < 2, 'Too many records for jid {}'.format(jid)
+        if cur.rowcount == 1:
+            return {'username': row[0], 'password': row[1]}
+
+    async def remove_account(self, jid):
+        """Remove account information for a JID
+
+        returns number of affected rows, should be 1 deleted row.
+        0 means the JID wasn't found, and more than 1 means multiple
+        accounts were deleted.
+
+        """
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('delete from users where jid=%s', (jid,))
+        return cur.rowcount
+
+    async def count(self):
+        """Count how many accounts we have
+        """
+        await self.connect()
+        # Did we create accounts
+        cur = await self.conn.cursor()
+        await cur.execute('select count(*) from users')
+        results = await cur.fetchone()
+        return results[0]

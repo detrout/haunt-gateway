@@ -25,10 +25,26 @@ class TestUser(TestCase):
     async def test_create_db(self):
         users = Users(database=self.database)
         try:
-            print('a')
+            test_user = 'test@example.org'
+            legacy_user = 'hangouts1'
+            password = 'pw1'
             await users._create_database_if_needed()
-            print('b')
             await users.create_table_if_needed()
-            print('c')
+            await users.add_account(test_user, legacy_user, password)
+            await users.add_account('other@example.org', 'other1', password)
+
+            count = await users.count()
+            self.assertEqual(count, 2)
+
+            # find accounts
+            data = await users.find_account(test_user)
+            self.assertEqual(data['username'], legacy_user)
+            self.assertEqual(data['password'], password)
+
+            deleted = await users.remove_account(test_user)
+            self.assertEqual(deleted, 1)
+            count = await users.count()
+            self.assertEqual(count, 1)
         finally:
+            users.close()
             await users._drop_database()
