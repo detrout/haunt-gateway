@@ -1,5 +1,9 @@
 import aiopg
 from psycopg2 import sql
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Users:
     def __init__(self, database, user=None, password=None, host=None):
