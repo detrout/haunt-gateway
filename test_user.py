@@ -17,6 +17,11 @@ class TestUser(TestCase):
         self.assertFalse(await users._does_database_exist())
 
     @async_test
+    async def test_db_exists(self):
+        users = Users(database="template1")
+        self.assertTrue(await users._does_database_exist())
+
+    @async_test
     async def test_create_db(self):
         users = Users(database=self.database)
         try:
