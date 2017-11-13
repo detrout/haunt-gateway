@@ -1,5 +1,3 @@
-import aiopg
-from psycopg2.sql import SQL, Identifier
 from unittest import TestCase
 
 from test_xhang import async_test
