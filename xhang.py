@@ -18,7 +18,7 @@ class EchoComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port, database):
         super(EchoComponent, self).__init__(jid, secret, server, port)
 
-        self.registered = Users(database)
+        self.users = Users(database)
 
         self.add_event_handler('message', self.message)
         self.add_event_handler('session_start', self.start)
@@ -82,7 +82,7 @@ class EchoComponent(ComponentXMPP):
 
         # starting to register
         if len(query_payload) == 0:
-            data = await self.registered.find_account(iq['from'].bare)
+            data = await self.users.find_account(iq['from'].bare)
             if data is not None:
                 username = data['username']
                 password = data['password']
@@ -98,12 +98,12 @@ class EchoComponent(ComponentXMPP):
             data = await self.register_parse_form_payload(query_payload[0])
             # TODO Register
             # try logging in?
-            await self.registered.add_account(iq['from'].bare, data['username'], data['password'])
+            await self.users.add_account(iq['from'].bare, data['username'], data['password'])
             return iq.reply()
 
         # removing already registered
         elif query_payload[0].tag == '{jabber:iq:register}remove':
-            removed = await self.registered.remove_account(iq.get('from').bare)
+            removed = await self.users.remove_account(iq.get('from').bare)
             if removed == 0:
                 reply = iq.reply()
                 reply.error()
