@@ -107,9 +107,15 @@ class TestXHang(TestCase):
             iq = Iq(stype='set')
             iq['from'] = 'user@example.com/asdf'
             iq['to'] = 'hangups.example.net'
-            iq.set_query('jabber:iq:register')
-            form = await xmpp.register_create_form(iq, username, password)
-            reply = await xmpp.register(form)
+            iq.set_payload(ET.fromstring('''
+<query xmlns="jabber:iq:register">
+  <x xmlns="jabber:x:data">
+    <field type="text-single" var="username"><value>{username}</value></field>
+    <field type="text-private" var="password"><value>{password}</value></field>
+  </x>
+</query>'''.format(username=username, password=password)))
+            reply = await xmpp.register(iq)
+
             add_account.assert_called_with(iq['from'].bare, username, password)
 
             self.assertEqual(reply['type'], 'result')
