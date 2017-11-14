@@ -182,12 +182,6 @@ def main():
 
     xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port, database)
 
-    # Dirty Hack to load account info
-    account_file = 'accounts.json'
-    if os.path.exists(account_file):
-        with open(account_file) as instream:
-            xmpp.registered = json.load(instream)
-
     xmpp.connect()
     xmpp.process()
 
