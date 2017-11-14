@@ -93,9 +93,8 @@ class EchoComponent(ComponentXMPP):
                 iq,
                 username=username,
                 password=password)
-
         # returning filled out form
-        if query_payload[0].tag == '{jabber:x:data}x':
+        elif query_payload[0].tag == '{jabber:x:data}x':
             data = await self.register_parse_form_payload(query_payload[0])
             # TODO Register
             # try logging in?
