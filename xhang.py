@@ -80,16 +80,15 @@ class EchoComponent(ComponentXMPP):
 
         query_payload = get_query_contents(iq)
 
-        data = await self.registered.find_account(iq['from'].bare)
-        if data is not None:
-            username = data['username']
-            password = data['password']
-        else:
-            username = None
-            password = None
-
         # starting to register
         if len(query_payload) == 0:
+            data = await self.registered.find_account(iq['from'].bare)
+            if data is not None:
+                username = data['username']
+                password = data['password']
+            else:
+                username = None
+                password = None
             return await self.register_create_form(
                 iq,
                 username=username,
