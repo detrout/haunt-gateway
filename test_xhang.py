@@ -193,7 +193,6 @@ class TestUtils(TestCase):
         self.assertEqual(get_query_contents(iq), [])
 
         iq = Iq(stype='set')
-        remove = ET.Element('remove')
         iq.set_payload(ET.fromstring('<query xmlns="jabber:x:register"><remove/></query>'))
         contents = get_query_contents(iq)
         self.assertEqual(len(contents), 1)
