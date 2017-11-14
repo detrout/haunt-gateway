@@ -146,7 +146,7 @@ class TestXHang(TestCase):
             iq = Iq(stype='set')
             iq['from'] = 'user_unregister@example.com/asdf'
             iq['to'] = 'hangups.example.net'
-            iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+            iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
             result = await xmpp.register(iq)
             self.assertEqual(result['type'], 'result')
             count = await xmpp.registered.count()
@@ -172,7 +172,7 @@ class TestXHang(TestCase):
             iq = Iq(stype='set')
             iq['from'] = 'baduser@example.com/asdf'
             iq['to'] = 'hangups.example.net'
-            iq.set_payload(ET.fromstring('<query ns="jabber:iq:register"><remove/></query>'))
+            iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
             result = await xmpp.register(iq)
             self.assertEqual(result['type'], 'error')
             count = await xmpp.registered.count()
@@ -193,8 +193,8 @@ class TestUtils(TestCase):
         self.assertEqual(get_query_contents(iq), [])
 
         iq = Iq(stype='set')
-        iq.set_payload(ET.fromstring('<query ns="jabber:x:register"><remove/></query>'))
         remove = ET.Element('remove')
+        iq.set_payload(ET.fromstring('<query xmlns="jabber:x:register"><remove/></query>'))
         contents = get_query_contents(iq)
         self.assertEqual(len(contents), 1)
-        self.assertEqual(contents[0].tag, 'remove')
+        self.assertEqual(contents[0].tag, '{jabber:x:register}remove')

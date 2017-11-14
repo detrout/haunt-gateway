@@ -102,7 +102,7 @@ class EchoComponent(ComponentXMPP):
             return iq.reply()
 
         # removing already registered
-        elif query_payload[0].tag == 'remove':
+        elif query_payload[0].tag == '{jabber:iq:register}remove':
             removed = await self.registered.remove_account(iq.get('from').bare)
             if removed == 0:
                 reply = iq.reply()
