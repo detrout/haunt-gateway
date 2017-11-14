@@ -83,12 +83,13 @@ class TestXHang(TestCase):
                 wraps=get_mock_coroutine(
                     return_value={'username': username, 'password': password})) as find_account:
             iq = Iq(stype='set')
-            iq['from'] = 'user_registered@example.com/asdf'
+            iq['from'] = jid + '/asdf'
             iq['to'] = 'hangups.example.net'
             iq.set_query('jabber:iq:register')
 
             # send bare register request
             reply = await xmpp.register(iq)
+            find_account.assert_called_with(jid)
             payload = get_query_contents(reply)
             data = await xmpp.register_parse_form_payload(payload[0])
             self.assertEqual(len(data), 2)
@@ -128,7 +129,7 @@ class TestXHang(TestCase):
         r = xmpp.registered
         with patch.object(r, 'remove_account', wraps=get_mock_coroutine(return_value=1)) as remove_account:
             iq = Iq(stype='set')
-            iq['from'] = 'user_unregister@example.com/asdf'
+            iq['from'] = jid + '/asdf'
             iq['to'] = 'hangups.example.net'
             iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
             result = await xmpp.register(iq)
