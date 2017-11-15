@@ -54,8 +54,8 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_start_registration(self):
-        with patch.object(xmpp.registered, 'find_account', wraps=get_mock_coroutine(return_value=None)) as find_account:
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        with patch.object(xmpp.users, 'find_account', wraps=get_mock_coroutine(return_value=None)) as find_account:
             iq = Iq(stype='set')
             iq['from'] = 'user@example.com/asdf'
             iq['to'] = 'hangups.example.net'
@@ -78,7 +78,7 @@ class TestXHang(TestCase):
         password = 'password'
 
         with patch.object(
-                xmpp.registered,
+                xmpp.users,
                 'find_account',
                 wraps=get_mock_coroutine(
                     return_value={'username': username, 'password': password})) as find_account:
@@ -100,7 +100,7 @@ class TestXHang(TestCase):
     async def test_finish_registration(self):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
-        r = xmpp.registered
+        r = xmpp.users
         with patch.object(r, 'add_account', wraps=get_mock_coroutine(return_value=None)) as add_account:
             username = 'finish'
             password = 'registration'
@@ -125,8 +125,8 @@ class TestXHang(TestCase):
     async def test_unregister_registered(self):
         jid = 'user_unregister@example.com'
 
-        r = xmpp.registered
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        r = xmpp.users
         with patch.object(r, 'remove_account', wraps=get_mock_coroutine(return_value=1)) as remove_account:
             iq = Iq(stype='set')
             iq['from'] = jid + '/asdf'
@@ -143,7 +143,7 @@ class TestXHang(TestCase):
         jid = 'gooduser@example.com'
         username = 'username'
         password = 'password'
-        with patch.object(xmpp.registered, 'remove_account', wraps=get_mock_coroutine(return_value=0)) as remove_account:
+        with patch.object(xmpp.users, 'remove_account', wraps=get_mock_coroutine(return_value=0)) as remove_account:
 
             iq = Iq(stype='set')
             iq['from'] = 'baduser@example.com/asdf'
