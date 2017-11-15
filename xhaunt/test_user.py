@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from test_xhang import async_test
-
-from users import Users
+from .test_component import async_test
+from .users import Users
 
 
 class TestUser(TestCase):

@@ -9,14 +9,14 @@ from slixmpp.xmlstream import ET
 from slixmpp.xmlstream.handler.callback import Callback
 from slixmpp.xmlstream.matcher.xpath import MatchXPath
 
-from users import Users
+from .users import Users
 logger = logging.getLogger('xmpp')
 
 
 
-class EchoComponent(ComponentXMPP):
+class XHauntComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port, database):
-        super(EchoComponent, self).__init__(jid, secret, server, port)
+        super(XHauntComponent, self).__init__(jid, secret, server, port)
 
         self.users = Users(database)
 
@@ -180,7 +180,7 @@ def main():
 
     logging.basicConfig(level=logging.DEBUG)
 
-    xmpp = EchoComponent(service_name, secret, jabber_server, jabber_port, database)
+    xmpp = XHauntComponent(service_name, secret, jabber_server, jabber_port, database)
 
     xmpp.connect()
     xmpp.process()

@@ -6,7 +6,7 @@ from pprint import pprint
 from xml.etree import ElementTree as ET
 from slixmpp.stanza.iq import Iq
 
-from xhang import EchoComponent, get_query_contents
+from .component import XHauntComponent, get_query_contents
 
 
 def async_test(coro):
@@ -36,7 +36,7 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_send_form(self):
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
         iq = Iq(stype='set')
         iq['from'] = 'user@example.com/asdf'
@@ -54,8 +54,8 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_start_registration(self):
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         with patch.object(xmpp.registered, 'find_account', wraps=get_mock_coroutine(return_value=None)) as find_account:
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
             iq = Iq(stype='set')
             iq['from'] = 'user@example.com/asdf'
             iq['to'] = 'hangups.example.net'
@@ -72,7 +72,7 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_already_registered(self):
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         jid = 'user_registered@example.com'
         username = 'username'
         password = 'password'
@@ -98,7 +98,7 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_finish_registration(self):
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
         r = xmpp.registered
         with patch.object(r, 'add_account', wraps=get_mock_coroutine(return_value=None)) as add_account:
@@ -125,8 +125,8 @@ class TestXHang(TestCase):
     async def test_unregister_registered(self):
         jid = 'user_unregister@example.com'
 
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         r = xmpp.registered
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         with patch.object(r, 'remove_account', wraps=get_mock_coroutine(return_value=1)) as remove_account:
             iq = Iq(stype='set')
             iq['from'] = jid + '/asdf'
@@ -139,7 +139,7 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_unregister_unregistered(self):
-        xmpp = EchoComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         jid = 'gooduser@example.com'
         username = 'username'
         password = 'password'
