@@ -10,7 +10,11 @@ from hangups.auth import GoogleAuthError
 import appdirs
 
 import pytest
-token_path = os.path.join(appdirs.AppDirs('hangups', 'hangups').user_cache_dir, 'refresh_token.txt')
+
+def get_hangups_token():
+    token_path = os.path.join(appdirs.AppDirs('hangups', 'hangups').user_cache_dir, 'refresh_token.txt')
+    with open(token_path) as instream:
+        return instream.read()
 
 
 @pytest.mark.skipif(
@@ -21,8 +25,7 @@ class TestHangupsAuth(TestCase):
         self.database = 'testxhang_auth'
         self.jid = 'user@example.org'
         self.username = 'user'
-        with open(token_path) as instream:
-            self.token = instream.read()
+        self.token = get_hangups_token()
         self._user = Users(self.database)
         self._loop = asyncio.new_event_loop()
         self._loop.run_until_complete(self._user._create_database_if_needed())
