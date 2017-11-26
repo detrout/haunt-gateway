@@ -83,9 +83,10 @@ class Users:
         await cur.execute("""
 create table if not exists users (
             id serial primary key,
-            jid varchar(255),
+            jid varchar(255) unique,
             username varchar(255),
-            token varchar(255))
+            token varchar(255));
+create index user_jid_index on users using hash (jid);
 """)
 
     async def add_account(self, jid, username, token):
