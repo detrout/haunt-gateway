@@ -80,7 +80,6 @@ class Users:
     async def create_table_if_needed(self):
         await self.connect()
         cur = await self.conn.cursor()
-        await cur.execute("create sequence if not exists users_id_seq")
         await cur.execute("""
 create table if not exists users (
             id serial primary key,
