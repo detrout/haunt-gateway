@@ -2,7 +2,7 @@ import asyncio
 import os
 from unittest import TestCase
 
-from .users import Users
+from .db import Users
 from .test_component import async_test
 from .auth import get_auth_async
 

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from .test_component import async_test
-from .users import Users, Roster
+from .db import Users, Roster
 
 from hangups.user import UserID
 
