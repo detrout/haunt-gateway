@@ -11,6 +11,7 @@ import appdirs
 
 import pytest
 
+
 def get_hangups_token():
     token_path = os.path.join(appdirs.AppDirs('hangups', 'hangups').user_cache_dir, 'refresh_token.txt')
     with open(token_path) as instream:

@@ -5,6 +5,7 @@ from .db import Users, Roster
 
 from hangups.user import UserID
 
+
 class TestUser(TestCase):
     def setUp(self):
         self.database = 'xhangtest'

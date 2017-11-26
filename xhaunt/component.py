@@ -13,7 +13,6 @@ from .db import Users
 logger = logging.getLogger('xmpp')
 
 
-
 class XHauntComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port, database):
         super(XHauntComponent, self).__init__(jid, secret, server, port)
