@@ -5,7 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Users:
+
+class HauntDB:
     def __init__(self, database, user=None, password=None, host=None):
         self.conn = None
         self.database = database
@@ -77,6 +78,8 @@ class Users:
             if conn:
                 conn.close()
 
+
+class Users(HauntDB):
     async def create_table_if_needed(self):
         await self.connect()
         cur = await self.conn.cursor()
