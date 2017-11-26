@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from hangups.user import UserID
 
 
 class HauntDB:
@@ -129,3 +130,69 @@ create index user_jid_index on users using hash (jid);
         await cur.execute('select count(*) from users')
         results = await cur.fetchone()
         return results[0]
+
+
+class Roster(HauntDB):
+    async def create_table_if_needed(self):
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute("""
+create table if not exists roster (
+            id serial primary key,
+            jid varchar(255) references users (jid) on delete cascade,
+            gaia_id varchar(255),
+            chat_id varchar(255)
+);
+create index roster_jid_index on roster using hash (jid);
+create index roster_user_id_index on roster (gaia_id, chat_id);
+""")
+
+    async def add_user_id(self, jid, user_id):
+        if not isinstance(user_id, UserID):
+            raise ValueError('Expected type "UserID", got {}'.format(type(user_id)))
+
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('insert into roster ("jid", "gaia_id", "chat_id") values (%s, %s, %s)',
+                          (jid, user_id.gaia_id, user_id.chat_id))
+        if cur.rowcount != 1:
+            logger.warn('Insert returned {} rows instead of 1'.format(cur.rowcount))
+
+    async def delete_user_id(self, jid, user_id):
+        if not isinstance(user_id, UserID):
+            raise ValueError('Expected type "UserID", got {}'.format(type(user_id)))
+
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('delete from roster where jid=%s and gaia_id=%s and chat_id=%s',
+                          (jid, user_id.gaia_id, user_id.chat_id))
+        if cur.rowcount != 1:
+            logger.warn('Delete deleted {} rows instead of 1'.format(cur.rowcount))
+
+    async def find_user_ids(self, jid):
+        await self.connect()
+        cur = await self.conn.cursor()
+        await cur.execute('select gaia_id, chat_id from roster where jid=%s', (jid,))
+
+        for row in cur:
+            yield UserID(gaia_id=row[0], chat_id=row[1])
+
+    async def count(self, jid=None):
+        """Count how many records are in this table
+
+        :args:
+           jid (str): limit count to records for just this jid (if provided)
+
+        :returns:
+           Either a count of all records, or a count of entries for the provided jid
+        """
+        await self.connect()
+        cur = await self.conn.cursor()
+
+        if jid is None:
+            await cur.execute('select count(*) from roster')
+        else:
+            await cur.execute('select count(*) from roster where jid=%s', (jid,))
+
+        result = await cur.fetchone()
+        return result[0]
