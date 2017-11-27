@@ -54,7 +54,7 @@ class TestXHang(TestCase):
         self.assertEqual(password, data['password'])
 
     @async_test
-    async def test_start_registration(self):
+    async def test_registration_start_never_registered(self):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         with patch.object(xmpp.users, 'find_account', wraps=get_mock_coroutine(return_value=None)) as find_account:
             iq = Iq(stype='set')
@@ -63,7 +63,7 @@ class TestXHang(TestCase):
             iq.set_query('jabber:iq:register')
 
             # send bare register request
-            reply = await xmpp.register(iq)
+            reply = await xmpp.registration_start(iq)
             find_account.assert_called_with(iq['from'].bare)
             payload = get_query_contents(reply)
             self.assertEqual(len(payload), 1)
@@ -72,7 +72,7 @@ class TestXHang(TestCase):
             self.assertEqual(len(data), 0)
 
     @async_test
-    async def test_submitting_registration_succeed(self):
+    async def test_registration_start_already_registered(self):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         jid = 'user_registered@example.com'
         username = 'username'
@@ -83,22 +83,25 @@ class TestXHang(TestCase):
                 'find_account',
                 wraps=get_mock_coroutine(
                     return_value={'username': username, 'password': password})) as find_account:
+            # construct initial registration iq
             iq = Iq(stype='set')
             iq['from'] = jid + '/asdf'
             iq['to'] = 'hangups.example.net'
             iq.set_query('jabber:iq:register')
 
-            # send bare register request
-            reply = await xmpp.register(iq)
+            # start registration
+            reply = await xmpp.registration_start(iq)
             find_account.assert_called_with(jid)
-            payload = get_query_contents(reply)
-            data = await xmpp.register_parse_form_payload(payload[0])
+            reply_payload = get_query_contents(reply)
+
+            # parse resulting form
+            data = await xmpp.register_parse_form_payload(reply_payload[0])
             self.assertEqual(len(data), 2)
             self.assertEqual(data['username'], 'username')
             self.assertEqual(data['password'], 'password')
 
     @async_test
-    async def test_create_account(self):
+    async def test_create_account_new_account(self):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
         r = xmpp.users
@@ -120,7 +123,8 @@ class TestXHang(TestCase):
     <field type="text-private" var="password"><value>{password}</value></field>
   </x>
 </query>'''.format(username=username, password=password)))
-            reply = await xmpp.register(iq)
+            query_payload = get_query_contents(iq)
+            reply = await xmpp.register_create_account(iq, query_payload)
 
             get_auth_async.assert_called_with(jid=jid, username=username, password=password)
             add_account.assert_called_with(jid, username)
@@ -138,7 +142,7 @@ class TestXHang(TestCase):
             iq['from'] = jid + '/asdf'
             iq['to'] = 'hangups.example.net'
             iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
-            result = await xmpp.register(iq)
+            result = await xmpp.register_unregister(iq)
             self.assertEqual(result['type'], 'result')
 
             remove_account.assert_called_with(jid)
@@ -149,12 +153,11 @@ class TestXHang(TestCase):
         jid = 'baduser@example.com'
         jid_resource = jid + '/asdf'
         with patch.object(xmpp.users, 'remove_account', wraps=get_mock_coroutine(return_value=0)) as remove_account:
-
             iq = Iq(stype='set')
             iq['from'] = jid_resource
             iq['to'] = 'hangups.example.net'
             iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
-            result = await xmpp.register(iq)
+            result = await xmpp.register_unregister(iq)
             self.assertEqual(result['type'], 'error')
             remove_account.assert_called_with(jid)
 
