@@ -5,6 +5,7 @@ from pprint import pprint
 
 from xml.etree import ElementTree as ET
 from slixmpp.stanza.iq import Iq
+from slixmpp.stanza.presence import Presence
 
 from .component import XHauntComponent, get_query_contents
 
@@ -178,27 +179,48 @@ class TestXHang(TestCase):
             registration_start.assert_called_with(iq)
 
     @async_test
-    async def test_register_register_create_account(self):
+    async def test_register_register_create_account_succeeded(self):
         """Make sure register_create_account is called
         """
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
-        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send, \
-             patch.object(xmpp, 'register_create_account', wraps=get_mock_coroutine(return_value=Iq())) as register_create_account:
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as iq_send:
+            iq = generate_filled_registration_iq(Iq)
+            reply = iq.reply()
+            with patch.object(xmpp,
+                              'register_create_account',
+                              wraps=get_mock_coroutine(return_value=reply)) as register_create_account, \
+                 patch.object(Presence, 'send', wraps=get_mock_coroutine(return_value=None)) as presence_send, \
+                 patch.object(xmpp, 'subscribe_to', wraps=get_mock_coroutine(return_value=Presence())) as subscribe_to:
 
-            iq = Iq(stype='set')
-            iq['from'] = 'user@example.com/asdf'
-            iq['to'] = 'hangups.example.net'
-            iq.set_payload(ET.fromstring('''
-<query xmlns="jabber:iq:register">
-  <x xmlns="jabber:x:data">
-    <field type="text-single" var="username"><value>username1</value></field>
-    <field type="text-private" var="password"><value>password1</value></field>
-  </x>
-</query>'''))
-            query_payload = get_query_contents(iq)
+                query_payload = get_query_contents(iq)
 
-            await xmpp.register(iq)
-            register_create_account.assert_called_with(iq, query_payload)
+                await xmpp.register(iq)
+                register_create_account.assert_called_with(iq, query_payload)
+                iq_send.assert_called_with()
+                subscribe_to.assert_called_with(iq['from'])
+                presence_send.assert_called_with()
+
+    @async_test
+    async def test_register_register_create_account_failed(self):
+        """Make sure subscribe_to is not called
+        """
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as iq_send:
+            iq = generate_filled_registration_iq(Iq)
+            reply = iq.reply()
+            reply['type'] = 'error'
+            with patch.object(xmpp,
+                              'register_create_account',
+                              wraps=get_mock_coroutine(return_value=reply)) as register_create_account, \
+                 patch.object(xmpp, 'subscribe_to', wraps=get_mock_coroutine(return_value=Presence())) as subscribe_to:
+
+                query_payload = get_query_contents(iq)
+
+                await xmpp.register(iq)
+                register_create_account.assert_called_with(iq, query_payload)
+                iq_send.assert_called_with()
+                self.assertFalse(subscribe_to.called, False)
+
 
     @async_test
     async def test_register_register_unregister(self):
@@ -226,6 +248,20 @@ class TestXHang(TestCase):
             await reply.send()
 
             send.assert_called_with()
+
+
+def generate_filled_registration_iq(Iq, username='username1', password='password1'):
+    iq = Iq(stype='set')
+    iq['from'] = 'user@example.com/asdf'
+    iq['to'] = 'hangups.example.net'
+    iq.set_payload(ET.fromstring('''
+<query xmlns="jabber:iq:register">
+  <x xmlns="jabber:x:data">
+    <field type="text-single" var="username"><value>{username}</value></field>
+    <field type="text-private" var="password"><value>{password}</value></field>
+  </x>
+</query>'''.format(username=username, password=password)))
+    return iq
 
 class TestUtils(TestCase):
     def test_get_query_contents(self):

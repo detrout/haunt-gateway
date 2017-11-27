@@ -76,6 +76,10 @@ class XHauntComponent(ComponentXMPP):
         elif query_payload[0].tag == '{jabber:x:data}x':
             iq = await self.register_create_account(iq, query_payload)
             await iq.send()
+            if iq.get('type') == 'result':
+                p = await self.subscribe_to(iq['to'])
+                await p.send()
+
         # removing already registered
         elif query_payload[0].tag == '{jabber:iq:register}remove':
             iq = await self.register_unregister(iq)
@@ -166,6 +170,16 @@ class XHauntComponent(ComponentXMPP):
         msg = 'Goodbye %s' % (iq['register']['username'])
         self.send_message(iq['from'], msg, mfrom=self.boundjid.full)
 
+    async def subscribe_to(self, jid):
+        """Subscribe to user's presence
+
+        :args:
+           jid: jid to subscribe to
+
+        :returns:
+           subscribe presence stanza
+        """
+        return self.make_presence(pto=jid.bare, pfrom=self.xmpp.boundjid, ptype='subscribe')
     async def get_auth_async(self, jid, username, password=None, validation_code=None, token=None):
         with concurrent.futures.ProcessPoolExecutor() as executor:
             task = self.loop.run_in_executor(
