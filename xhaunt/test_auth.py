@@ -4,6 +4,7 @@ from unittest import TestCase
 
 from .db import Users
 from .test_component import async_test
+from .auth import RefreshTokenCache
 
 from hangups.auth import GoogleAuthError
 import appdirs
@@ -43,6 +44,8 @@ class TestHangupsAuth(TestCase):
         result = await self.xmpp.get_auth_async(self.jid, self.username, token=self.token)
         print('login tokens', result)
         self.assertTrue(isinstance(result, dict))
+        cache = RefreshTokenCache(self.database, self.jid)
+        self.assertEqual(cache.get(), self.token)
 
     @async_test
     async def test_unsuccessful_auth(self, loop=None):
