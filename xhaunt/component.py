@@ -86,15 +86,13 @@ class XHauntComponent(ComponentXMPP):
             return await self.registration_start(iq)
         # returning filled out form
         elif query_payload[0].tag == '{jabber:x:data}x':
-            data = await self.register_parse_form_payload(query_payload[0])
-            # TODO Register
-            # try logging in?
-            await self.users.add_account(iq['from'].bare, data['username'], data['password'])
-            return iq.reply()
-
+            return await self.register_create_account(iq, query_payload)
         # removing already registered
         elif query_payload[0].tag == '{jabber:iq:register}remove':
             return await self.register_unregister(iq)
+        else:
+            print('else', query_payload[0].tag)
+
     async def registration_start(self, iq):
         """Start or edit a registration
 
@@ -113,9 +111,27 @@ class XHauntComponent(ComponentXMPP):
             username=username,
             password=password)
 
+    async def register_create_account(self, iq, query_payload):
+        """Create account if provided log in information succeeds
+
+        :args:
+            iq: incoming iq packet with filled in form
+            query_payload: just the query payload
+        :returns:
+            iq: indicating success or error
+        """
+        data = await self.register_parse_form_payload(query_payload[0])
+        # try logging in
+        await self.users.add_account(iq['from'].bare, data['username'])
+        result = await self.get_auth_async(
+            jid=iq['from'].bare,
+            username=data['username'],
+            password=data['password'],)
+        if result is not None:
+            # schedule sending subscription
             return iq.reply()
         else:
-            print('else', query_payload[0].tag)
+            return iq.reply(type='error')
 
     async def register_unregister(self, iq):
         removed = await self.users.remove_account(iq.get('from').bare)
