@@ -41,7 +41,7 @@ class TestHangupsAuth(TestCase):
         self._loop.run_until_complete(self._user._drop_database())
 
     @async_test
-    async def test_successful_auth(self, loop=None):
+    async def test_successful_auth(self):
         result = await self.xmpp.get_auth_async(self.jid, self.username, token=self.token)
         print('login tokens', result)
         self.assertTrue(isinstance(result, dict))
@@ -49,7 +49,7 @@ class TestHangupsAuth(TestCase):
         self.assertEqual(cache.get(), self.token)
 
     @async_test
-    async def test_unsuccessful_auth(self, loop=None):
+    async def test_unsuccessful_auth(self):
         jid = 'notauser@example.org'
         username = 'bureaucrat_of_the_ebon_monolith@example.org'
         password = 'u%`?J\yUsIs(8N@:B;P@j3gq'

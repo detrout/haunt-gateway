@@ -11,17 +11,17 @@ class TestUser(TestCase):
         self.database = 'xhangtest'
 
     @async_test
-    async def test_db_missing(self, loop=None):
+    async def test_db_missing(self):
         users = Users(database="i-probably-don't-exist")
         self.assertFalse(await users._does_database_exist())
 
     @async_test
-    async def test_db_exists(self, loop=None):
+    async def test_db_exists(self):
         users = Users(database="template1")
         self.assertTrue(await users._does_database_exist())
 
     @async_test
-    async def test_create_db(self, loop=None):
+    async def test_create_db(self):
         users = Users(database=self.database)
         roster = Roster(database=self.database)
         try:
