@@ -29,7 +29,7 @@ class XHauntComponent(ComponentXMPP):
         self.register_handler(
             Callback('In-Band Registration',
                      MatchXPath('{%s}iq/{jabber:iq:register}query' % (self.default_ns,)),
-                     self.register_cb))
+                     self.register))
         self.register_plugin('xep_0199')  # Ping
         self.register_plugin('xep_0092')  # Software Version
         self.register_plugin('xep_0030')  # Service Discovery
@@ -52,17 +52,6 @@ class XHauntComponent(ComponentXMPP):
     def presence_available(self, *args, **kwargs):
         logger.debug('pa %s', str(args))
 
-    async def register_cb(self, iq):
-        """Callback for triggering registration
-
-        This is seperate just to make it easier to test the
-        registration logic.
-
-        """
-        reply = await self.register(iq)
-        if reply is not None:
-            reply.send()
-
     async def register(self, iq):
         """Logic for handling user registration to the component
         """
@@ -81,13 +70,16 @@ class XHauntComponent(ComponentXMPP):
 
         # starting to register
         if len(query_payload) == 0:
-            return await self.registration_start(iq)
+            iq = await self.registration_start(iq)
+            await iq.send()
         # returning filled out form
         elif query_payload[0].tag == '{jabber:x:data}x':
-            return await self.register_create_account(iq, query_payload)
+            iq = await self.register_create_account(iq, query_payload)
+            await iq.send()
         # removing already registered
         elif query_payload[0].tag == '{jabber:iq:register}remove':
-            return await self.register_unregister(iq)
+            iq = await self.register_unregister(iq)
+            await iq.send()
         else:
             print('else', query_payload[0].tag)
 
