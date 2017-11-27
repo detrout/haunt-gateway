@@ -15,6 +15,7 @@ def async_test(coro):
         return loop.run_until_complete(coro(*args, **kwargs, loop=loop))
     return wrapper
 
+
 def get_mock_coroutine(return_value):
     """Wrap a mock function to act as a coroutine
 
