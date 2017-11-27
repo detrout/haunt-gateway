@@ -71,7 +71,7 @@ class TestXHang(TestCase):
             self.assertEqual(len(data), 0)
 
     @async_test
-    async def test_already_registered(self, loop=None):
+    async def test_submitting_registration_succeed(self, loop=None):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
         jid = 'user_registered@example.com'
         username = 'username'
@@ -97,7 +97,7 @@ class TestXHang(TestCase):
             self.assertEqual(data['password'], 'password')
 
     @async_test
-    async def test_finish_registration(self, loop=None):
+    async def test_create_account(self, loop=None):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
         r = xmpp.users
