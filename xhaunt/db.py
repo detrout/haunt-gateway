@@ -93,11 +93,15 @@ create table if not exists users (
 create index user_jid_index on users using hash (jid);
 """)
 
-    async def add_account(self, jid, username, token):
+    async def add_account(self, jid, username, token=None):
         await self.connect()
         cur = await self.conn.cursor()
-        await cur.execute('insert into users ("jid", "username", "token") values (%s, %s, %s)',
-                          (jid, username, token))
+        if token is None:
+            await cur.execute('insert into users ("jid", "username") values (%s %s)',
+                              (jid, username))
+        else:
+            await cur.execute('insert into users ("jid", "username", "token") values (%s, %s, %s)',
+                              (jid, username, token))
 
     async def find_account(self, jid):
         await self.connect()
