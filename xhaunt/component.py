@@ -81,17 +81,7 @@ class XHauntComponent(ComponentXMPP):
 
         # starting to register
         if len(query_payload) == 0:
-            data = await self.users.find_account(iq['from'].bare)
-            if data is not None:
-                username = data['username']
-                password = data['password']
-            else:
-                username = None
-                password = None
-            return await self.register_create_form(
-                iq,
-                username=username,
-                password=password)
+            return await self.registration_start(iq)
         # returning filled out form
         elif query_payload[0].tag == '{jabber:x:data}x':
             data = await self.register_parse_form_payload(query_payload[0])
@@ -108,6 +98,23 @@ class XHauntComponent(ComponentXMPP):
                 reply.error()
                 reply.set_payload(ET.fromstring('<error type="cancel"><item-not-found/></error>'))
                 return reply
+    async def registration_start(self, iq):
+        """Start or edit a registration
+
+        :returns:
+           Registration form
+        """
+        data = await self.users.find_account(iq['from'].bare)
+        if data is not None:
+            username = data['username']
+            password = data['password']
+        else:
+            username = None
+            password = None
+        return await self.register_create_form(
+            iq,
+            username=username,
+            password=password)
 
             return iq.reply()
         else:
