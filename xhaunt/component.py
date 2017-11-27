@@ -92,12 +92,7 @@ class XHauntComponent(ComponentXMPP):
 
         # removing already registered
         elif query_payload[0].tag == '{jabber:iq:register}remove':
-            removed = await self.users.remove_account(iq.get('from').bare)
-            if removed == 0:
-                reply = iq.reply()
-                reply.error()
-                reply.set_payload(ET.fromstring('<error type="cancel"><item-not-found/></error>'))
-                return reply
+            return await self.register_unregister(iq)
     async def registration_start(self, iq):
         """Start or edit a registration
 
@@ -119,6 +114,16 @@ class XHauntComponent(ComponentXMPP):
             return iq.reply()
         else:
             print('else', query_payload[0].tag)
+
+    async def register_unregister(self, iq):
+        removed = await self.users.remove_account(iq.get('from').bare)
+        if removed == 0:
+            reply = iq.reply()
+            reply.error()
+            reply.set_payload(ET.fromstring('<error type="cancel"><item-not-found/></error>'))
+            return reply
+
+        return iq.reply()
 
     async def register_create_form(self, iq, username=None, password=None):
         """Prepare a registration form
