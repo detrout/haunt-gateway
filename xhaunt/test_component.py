@@ -230,6 +230,8 @@ class TestXHang(TestCase):
 
     @async_test
     async def test_iq_patch(self):
+        """Test for experimenting with modifying Iq class
+        """
         with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send:
             iq = Iq(stype='set')
             iq['from'] = 'from@localhost'
