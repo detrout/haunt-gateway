@@ -101,12 +101,16 @@ class TestXHang(TestCase):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
 
         r = xmpp.users
-        with patch.object(r, 'add_account', wraps=get_mock_coroutine(return_value=None)) as add_account:
+        with patch.object(r, 'add_account', wraps=get_mock_coroutine(return_value=None)) as add_account, \
+             patch.object(xmpp, 'get_auth_async',
+                   wraps=get_mock_coroutine(return_value={'fix': 'tokens'})) as get_auth_async:
+            jid = 'user@example.com'
+            jid_resource = jid + '/asdf'
             username = 'finish'
             password = 'registration'
 
             iq = Iq(stype='set')
-            iq['from'] = 'user@example.com/asdf'
+            iq['from'] = jid_resource
             iq['to'] = 'hangups.example.net'
             iq.set_payload(ET.fromstring('''
 <query xmlns="jabber:iq:register">
@@ -117,7 +121,8 @@ class TestXHang(TestCase):
 </query>'''.format(username=username, password=password)))
             reply = await xmpp.register(iq)
 
-            add_account.assert_called_with(iq['from'].bare, username, password)
+            get_auth_async.assert_called_with(jid=jid, username=username, password=password)
+            add_account.assert_called_with(jid, username)
 
             self.assertEqual(reply['type'], 'result')
 
