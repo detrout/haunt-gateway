@@ -1,5 +1,4 @@
 import psycopg2
-import concurrent.futures
 
 from hangups import auth
 
@@ -42,13 +41,6 @@ class RefreshTokenCache:
             with conn.cursor() as cur:
                 cur.execute('insert into users ("token") values (%s) where jid=%s',
                             (refresh_token, self.jid,))
-
-
-async def get_auth_async(loop, database, jid, username, password=None, validation_code=None, token=None):
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        task = loop.run_in_executor(executor, get_auth, database, jid, username, password, validation_code, token)
-        result = await task
-        return result
 
 
 def get_auth(database, jid, username, password=None, validation_code=None, token=None):

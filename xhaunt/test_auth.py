@@ -4,7 +4,6 @@ from unittest import TestCase
 
 from .db import Users
 from .test_component import async_test
-from .auth import get_auth_async
 
 from hangups.auth import GoogleAuthError
 import appdirs
@@ -27,6 +26,8 @@ class TestHangupsAuth(TestCase):
         self.jid = 'user@example.org'
         self.username = 'user'
         self.token = get_hangups_token()
+        self.xmpp = XHauntComponent('haunt.localhost', 'asdf', 'localhost', 1234, self.database)
+
         self._user = Users(self.database)
         self._loop = asyncio.new_event_loop()
         self._loop.run_until_complete(self._user._create_database_if_needed())
@@ -39,8 +40,8 @@ class TestHangupsAuth(TestCase):
 
     @async_test
     async def test_successful_auth(self, loop=None):
-        result = await get_auth_async(loop, self.database, self.jid, self.username, token=self.token)
-        print(result)
+        result = await self.xmpp.get_auth_async(self.jid, self.username, token=self.token)
+        print('login tokens', result)
         self.assertTrue(isinstance(result, dict))
 
     @async_test
@@ -49,7 +50,7 @@ class TestHangupsAuth(TestCase):
         username = 'bureaucrat_of_the_ebon_monolith@example.org'
         password = 'u%`?J\yUsIs(8N@:B;P@j3gq'
         try:
-            await get_auth_async(loop, self.database, jid, username, password)
+            await self.xmpp.get_auth_async(jid, username, password)
         except GoogleAuthError:
             return
 

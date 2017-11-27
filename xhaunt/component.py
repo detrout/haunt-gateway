@@ -1,3 +1,4 @@
+import concurrent.futures
 from pprint import pprint
 import asyncio
 import json
@@ -17,7 +18,8 @@ class XHauntComponent(ComponentXMPP):
     def __init__(self, jid, secret, server, port, database):
         super(XHauntComponent, self).__init__(jid, secret, server, port)
 
-        self.users = Users(database)
+        self.database = database
+        self.users = Users(self.database)
 
         self.add_event_handler('message', self.message)
         self.add_event_handler('session_start', self.start)
@@ -157,6 +159,20 @@ class XHauntComponent(ComponentXMPP):
     def unregister(self, iq):
         msg = 'Goodbye %s' % (iq['register']['username'])
         self.send_message(iq['from'], msg, mfrom=self.boundjid.full)
+
+    async def get_auth_async(self, jid, username, password=None, validation_code=None, token=None):
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            task = self.loop.run_in_executor(
+                executor,
+                get_auth,
+                self.database,
+                jid,
+                username,
+                password,
+                validation_code,
+                token)
+            result = await task
+            return result
 
 
 def get_query_contents(iq):
