@@ -145,17 +145,17 @@ class TestXHang(TestCase):
     @async_test
     async def test_unregister_unregistered(self, loop=None):
         xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
-        jid = 'gooduser@example.com'
-        username = 'username'
-        password = 'password'
+        jid = 'baduser@example.com'
+        jid_resource = jid + '/asdf'
         with patch.object(xmpp.users, 'remove_account', wraps=get_mock_coroutine(return_value=0)) as remove_account:
 
             iq = Iq(stype='set')
-            iq['from'] = 'baduser@example.com/asdf'
+            iq['from'] = jid_resource
             iq['to'] = 'hangups.example.net'
             iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
             result = await xmpp.register(iq)
             self.assertEqual(result['type'], 'error')
+            remove_account.assert_called_with(jid)
 
 
 class TestUtils(TestCase):
