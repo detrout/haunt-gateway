@@ -2,6 +2,7 @@ import asyncio
 import os
 from unittest import TestCase
 
+from .component import XHauntComponent
 from .db import Users
 from .test_component import async_test
 from .auth import RefreshTokenCache

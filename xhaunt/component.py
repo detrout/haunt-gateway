@@ -10,6 +10,7 @@ from slixmpp.xmlstream import ET
 from slixmpp.xmlstream.handler.callback import Callback
 from slixmpp.xmlstream.matcher.xpath import MatchXPath
 
+from .auth import get_auth
 from .db import Users
 logger = logging.getLogger('xmpp')
 
