@@ -59,4 +59,3 @@ class TestHangupsAuth(TestCase):
             return
 
         assert False, 'GoogleAuthError Exception not raised'
-
