@@ -125,7 +125,9 @@ class XHauntComponent(ComponentXMPP):
             # schedule sending subscription
             return iq.reply()
         else:
-            return iq.reply(type='error')
+            reply = iq.reply()
+            reply['type'] = 'error'
+            return reply
 
     async def register_unregister(self, iq):
         removed = await self.users.remove_account(iq.get('from').bare)
