@@ -161,6 +161,71 @@ class TestXHang(TestCase):
             self.assertEqual(result['type'], 'error')
             remove_account.assert_called_with(jid)
 
+    @async_test
+    async def test_register_registration_start(self):
+        """Test registration_start is called
+        """
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send, \
+             patch.object(xmpp, 'registration_start', wraps=get_mock_coroutine(return_value=Iq())) as registration_start:
+            iq = Iq(stype='set')
+            iq['from'] = 'user@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_query('jabber:iq:register')
+
+            # send bare register request
+            await xmpp.register(iq)
+            registration_start.assert_called_with(iq)
+
+    @async_test
+    async def test_register_register_create_account(self):
+        """Make sure register_create_account is called
+        """
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send, \
+             patch.object(xmpp, 'register_create_account', wraps=get_mock_coroutine(return_value=Iq())) as register_create_account:
+
+            iq = Iq(stype='set')
+            iq['from'] = 'user@example.com/asdf'
+            iq['to'] = 'hangups.example.net'
+            iq.set_payload(ET.fromstring('''
+<query xmlns="jabber:iq:register">
+  <x xmlns="jabber:x:data">
+    <field type="text-single" var="username"><value>username1</value></field>
+    <field type="text-private" var="password"><value>password1</value></field>
+  </x>
+</query>'''))
+            query_payload = get_query_contents(iq)
+
+            await xmpp.register(iq)
+            register_create_account.assert_called_with(iq, query_payload)
+
+    @async_test
+    async def test_register_register_unregister(self):
+        xmpp = XHauntComponent(self.jid, self.secret, self.jabber_server, self.port, self.database)
+        jid = 'baduser@example.com'
+        jid_resource = jid + '/asdf'
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send, \
+             patch.object(xmpp, 'register_unregister', wraps=get_mock_coroutine(return_value=Iq())) as register_unregister: 
+            iq = Iq(stype='set')
+            iq['from'] = jid_resource
+            iq['to'] = 'hangups.example.net'
+            iq.set_payload(ET.fromstring('<query xmlns="jabber:iq:register"><remove/></query>'))
+
+            await xmpp.register(iq)
+            register_unregister.assert_called_with(iq)
+
+    @async_test
+    async def test_iq_patch(self):
+        with patch.object(Iq, 'send', wraps=get_mock_coroutine(return_value=None)) as send:
+            iq = Iq(stype='set')
+            iq['from'] = 'from@localhost'
+            iq['to'] = 'to@localhost'
+
+            reply = iq.reply()
+            await reply.send()
+
+            send.assert_called_with()
 
 class TestUtils(TestCase):
     def test_get_query_contents(self):
