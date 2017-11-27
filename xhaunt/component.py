@@ -1,9 +1,6 @@
 import concurrent.futures
-from pprint import pprint
 import asyncio
-import json
 import logging
-import os
 
 from slixmpp.componentxmpp import ComponentXMPP
 from slixmpp.xmlstream import ET
