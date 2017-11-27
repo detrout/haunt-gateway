@@ -114,16 +114,7 @@ class TestXHang(TestCase):
             username = 'finish'
             password = 'registration'
 
-            iq = Iq(stype='set')
-            iq['from'] = jid_resource
-            iq['to'] = 'hangups.example.net'
-            iq.set_payload(ET.fromstring('''
-<query xmlns="jabber:iq:register">
-  <x xmlns="jabber:x:data">
-    <field type="text-single" var="username"><value>{username}</value></field>
-    <field type="text-private" var="password"><value>{password}</value></field>
-  </x>
-</query>'''.format(username=username, password=password)))
+            iq = generate_filled_registration_iq(Iq, username, password)
             query_payload = get_query_contents(iq)
             reply = await xmpp.register_create_account(iq, query_payload)
 
